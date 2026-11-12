@@ -103,7 +103,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
             <line x1="16" y1="17" x2="8" y2="17"/>
             <polyline points="10 9 9 9 8 9"/>
           </svg>
-          <span id="poliza-title" class="window-title-text">Póliza de Ingresos (frmPolizaIngresos)</span>
+          <span id="poliza-title" class="window-title-text">Póliza de Ingresos</span>
         </div>
         <button type="button" class="window-btn-close" title="Cerrar (ESC)" aria-label="Cerrar ventana" @click="cerrar">
           &times;

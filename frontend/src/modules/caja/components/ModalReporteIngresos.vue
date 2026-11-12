@@ -103,7 +103,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
             <line x1="12" y1="20" x2="12" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="14"/>
           </svg>
-          <span id="reporte-title" class="window-title-text">Reporte de Ingresos (frmReporteIngreso)</span>
+          <span id="reporte-title" class="window-title-text">Reporte de Ingresos</span>
         </div>
         <button type="button" class="window-btn-close" title="Cerrar (ESC)" aria-label="Cerrar ventana" @click="cerrar">
           &times;

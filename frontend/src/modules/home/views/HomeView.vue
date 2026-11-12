@@ -10,6 +10,17 @@ import ModalEmpleados from '../../catalogos/components/ModalEmpleados.vue'
 import ModalImprimeVerano from '../../caja/components/ModalImprimeVerano.vue'
 import ModalPolizaIngresos from '../../caja/components/ModalPolizaIngresos.vue'
 import ModalReporteIngresos from '../../caja/components/ModalReporteIngresos.vue'
+import ModalPolizaIngresoPeriodo from '../../caja/components/ModalPolizaIngresoPeriodo.vue'
+import ModalReporteIngresosPeriodo from '../../caja/components/ModalReporteIngresosPeriodo.vue'
+import ModalReporteVarios from '../../caja/components/ModalReporteVarios.vue'
+import ModalReporteDeudores from '../../caja/components/ModalReporteDeudores.vue'
+import ModalReporteDeudoresFechaCorte from '../../caja/components/ModalReporteDeudoresFechaCorte.vue'
+import ModalReporteDeudoresFechaCuenta from '../../caja/components/ModalReporteDeudoresFechaCuenta.vue'
+import ModalReporteDeudoresInscritos from '../../caja/components/ModalReporteDeudoresInscritos.vue'
+import ModalDepositoBancario from '../../caja/components/ModalDepositoBancario.vue'
+import ModalDepositoBancarioPropedeutico from '../../caja/components/ModalDepositoBancarioPropedeutico.vue'
+import ModalReciboProvisional from '../../caja/components/ModalReciboProvisional.vue'
+import ModalReciboProvisionalCancelar from '../../caja/components/ModalReciboProvisionalCancelar.vue'
 
 const router = useRouter()
 const { dark } = useTheme()
@@ -55,6 +66,17 @@ const mostrarModalEmpleados = ref(false)
 const mostrarModalImprimeVerano = ref(false)
 const mostrarModalPolizaIngresos = ref(false)
 const mostrarModalReporteIngresos = ref(false)
+const mostrarModalPolizaIngresoPeriodo = ref(false)
+const mostrarModalReporteIngresosPeriodo = ref(false)
+const mostrarModalReporteVarios = ref(false)
+const mostrarModalReporteDeudores = ref(false)
+const mostrarModalReporteDeudoresFechaCorte = ref(false)
+const mostrarModalReporteDeudoresFechaCuenta = ref(false)
+const mostrarModalReporteDeudoresInscritos = ref(false)
+const mostrarModalDepositoBancario = ref(false)
+const mostrarModalDepositoBancarioPropedeutico = ref(false)
+const mostrarModalReciboProvisional = ref(false)
+const mostrarModalReciboProvisionalCancelar = ref(false)
 
 function toggleMenu(menu: 'catalogo' | 'imprimir' | 'control' | 'utilerias'): void {
   menuAbierto.value = menuAbierto.value === menu ? null : menu
@@ -86,6 +108,61 @@ function abrirModalPolizaIngresos(): void {
 
 function abrirModalReporteIngresos(): void {
   mostrarModalReporteIngresos.value = true
+  cerrarMenus()
+}
+
+function abrirModalPolizaIngresoPeriodo(): void {
+  mostrarModalPolizaIngresoPeriodo.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteIngresosPeriodo(): void {
+  mostrarModalReporteIngresosPeriodo.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteVarios(): void {
+  mostrarModalReporteVarios.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteDeudores(): void {
+  mostrarModalReporteDeudores.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteDeudoresFechaCorte(): void {
+  mostrarModalReporteDeudoresFechaCorte.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteDeudoresFechaCuenta(): void {
+  mostrarModalReporteDeudoresFechaCuenta.value = true
+  cerrarMenus()
+}
+
+function abrirModalReporteDeudoresInscritos(): void {
+  mostrarModalReporteDeudoresInscritos.value = true
+  cerrarMenus()
+}
+
+function abrirModalDepositoBancario(): void {
+  mostrarModalDepositoBancario.value = true
+  cerrarMenus()
+}
+
+function abrirModalDepositoBancarioPropedeutico(): void {
+  mostrarModalDepositoBancarioPropedeutico.value = true
+  cerrarMenus()
+}
+
+function abrirModalReciboProvisional(): void {
+  mostrarModalReciboProvisional.value = true
+  cerrarMenus()
+}
+
+function abrirModalReciboProvisionalCancelar(): void {
+  mostrarModalReciboProvisionalCancelar.value = true
   cerrarMenus()
 }
 
@@ -165,37 +242,37 @@ setInterval(actualizarHora, 1000)
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteIngresos">
                 <span>Reporte de Ingresos</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalPolizaIngresoPeriodo">
                 <span>Poliza de Ingreso Periodo</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteIngresosPeriodo">
                 <span>Reporte de Ingresos por Periodo</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteVarios">
                 <span>Reporte Varios</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudores">
                 <span>Reporte Deudores</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresFechaCorte">
                 <span>Reporte Deudores Fecha de Corte</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresFechaCuenta">
                 <span>Reporte Deudores Fecha y Cuenta</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresInscritos">
                 <span>Reporte Deudores Inscritos</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
                 <span>Deposito Bancario</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReciboProvisional">
                 <span>Recibo Provisional</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReciboProvisionalCancelar">
                 <span>Recibo Provisional Cancelar</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancarioPropedeutico">
                 <span>Deposito Bancario - Curso Propedeutico</span>
               </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalImprimeVerano">
@@ -447,6 +524,17 @@ setInterval(actualizarHora, 1000)
     <ModalImprimeVerano v-if="mostrarModalImprimeVerano" @close="mostrarModalImprimeVerano = false" />
     <ModalPolizaIngresos v-if="mostrarModalPolizaIngresos" @close="mostrarModalPolizaIngresos = false" />
     <ModalReporteIngresos v-if="mostrarModalReporteIngresos" @close="mostrarModalReporteIngresos = false" />
+    <ModalPolizaIngresoPeriodo v-if="mostrarModalPolizaIngresoPeriodo" @close="mostrarModalPolizaIngresoPeriodo = false" />
+    <ModalReporteIngresosPeriodo v-if="mostrarModalReporteIngresosPeriodo" @close="mostrarModalReporteIngresosPeriodo = false" />
+    <ModalReporteVarios v-if="mostrarModalReporteVarios" @close="mostrarModalReporteVarios = false" />
+    <ModalReporteDeudores v-if="mostrarModalReporteDeudores" @close="mostrarModalReporteDeudores = false" />
+    <ModalReporteDeudoresFechaCorte v-if="mostrarModalReporteDeudoresFechaCorte" @close="mostrarModalReporteDeudoresFechaCorte = false" />
+    <ModalReporteDeudoresFechaCuenta v-if="mostrarModalReporteDeudoresFechaCuenta" @close="mostrarModalReporteDeudoresFechaCuenta = false" />
+    <ModalReporteDeudoresInscritos v-if="mostrarModalReporteDeudoresInscritos" @close="mostrarModalReporteDeudoresInscritos = false" />
+    <ModalDepositoBancario v-if="mostrarModalDepositoBancario" @close="mostrarModalDepositoBancario = false" />
+    <ModalDepositoBancarioPropedeutico v-if="mostrarModalDepositoBancarioPropedeutico" @close="mostrarModalDepositoBancarioPropedeutico = false" />
+    <ModalReciboProvisional v-if="mostrarModalReciboProvisional" @close="mostrarModalReciboProvisional = false" />
+    <ModalReciboProvisionalCancelar v-if="mostrarModalReciboProvisionalCancelar" @close="mostrarModalReciboProvisionalCancelar = false" />
   </div>
 </template>
 
