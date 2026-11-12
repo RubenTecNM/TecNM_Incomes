@@ -573,10 +573,6 @@ onUnmounted(() => {
             Salir
           </button>
         </div>
-
-        <div class="footer-hint">
-          <kbd>ESC</kbd> = Salir
-        </div>
       </footer>
 
     </div>

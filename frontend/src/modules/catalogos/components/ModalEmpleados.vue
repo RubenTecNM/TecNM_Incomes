@@ -212,7 +212,6 @@ onUnmounted(() => {
         </div>
         <div class="footer-hint">
           <span v-if="mensajeFeedback" class="feedback-text">{{ mensajeFeedback }}</span>
-          <kbd>ESC</kbd> = Salir
         </div>
       </footer>
     </div>

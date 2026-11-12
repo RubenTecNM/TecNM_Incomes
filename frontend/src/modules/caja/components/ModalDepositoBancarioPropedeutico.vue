@@ -239,7 +239,8 @@ onUnmounted(() => {
               id="input-prop-recibo-no"
               v-model="numeroRecibo"
               type="text"
-              class="tecnm-input font-mono font-bold text-center input-recibo-number"
+              readonly
+              class="tecnm-input font-mono font-bold text-center input-recibo-number readonly-input"
               placeholder="128710"
             />
           </div>
@@ -364,25 +365,23 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- FILA DE BOTONES F1 Y F2 (convertidos en botones institucionales interactivos) -->
+        <!-- FILA DE BOTONES (Lista de Alumnos y Lista de Cuentas) -->
         <div class="f-buttons-bar">
           <button
             type="button"
             class="btn-f-action"
-            title="Presiona F1 o haz clic para consultar lista de alumnos"
+            title="Consultar lista de alumnos"
             @click="abrirF1Alumnos"
           >
-            <span class="f-badge">F1</span>
             <span class="f-label">Lista de Alumnos</span>
           </button>
 
           <button
             type="button"
             class="btn-f-action"
-            title="Presiona F2 o haz clic para consultar catálogo de cuentas"
+            title="Consultar catálogo de cuentas"
             @click="abrirF2Cuentas"
           >
-            <span class="f-badge">F2</span>
             <span class="f-label">Lista de Cuentas</span>
           </button>
         </div>
@@ -410,20 +409,15 @@ onUnmounted(() => {
             Salir
           </button>
         </div>
-
-        <div class="footer-hint">
-          <kbd>ESC</kbd> = Salir
-        </div>
       </footer>
 
     </div>
 
-    <!-- DIÁLOGO MODAL F1: Lista de Alumnos -->
+    <!-- DIÁLOGO MODAL: Lista de Alumnos -->
     <div v-if="mostrarModalF1Alumnos" class="f1-submodal-backdrop" @click.self="mostrarModalF1Alumnos = false">
-      <div class="f1-submodal-window" role="dialog" aria-modal="true" aria-label="Consulta F1 Alumnos">
+      <div class="f1-submodal-window" role="dialog" aria-modal="true" aria-label="Consulta Alumnos">
         <header class="f1-submodal-header">
           <div class="f1-submodal-title">
-            <span class="f-badge">F1</span>
             <span>Lista de Alumnos (Base de Datos)</span>
           </div>
           <button type="button" class="window-btn-close" @click="mostrarModalF1Alumnos = false">&times;</button>

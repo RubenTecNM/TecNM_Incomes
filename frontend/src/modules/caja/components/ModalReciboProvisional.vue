@@ -357,7 +357,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
                 id="input-prov-recibo-no"
                 v-model="numeroRecibo"
                 type="text"
-                class="tecnm-input font-mono font-bold text-center text-primary"
+                readonly
+                class="tecnm-input font-mono font-bold text-center text-primary readonly-input"
               />
             </div>
 
@@ -619,25 +620,23 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
           </div>
         </div>
 
-        <!-- BOTONES F1 Y F2 (convertidos en botones institucionales interactivos) -->
+        <!-- BOTONES (Lista de Alumnos y Lista de Cuentas) -->
         <div class="f-buttons-bar">
           <button
             type="button"
             class="btn-f-action"
-            title="Presiona F1 o haz clic para consultar lista de alumnos"
+            title="Consultar lista de alumnos"
             @click="abrirF1Alumnos"
           >
-            <span class="f-badge">F1</span>
             <span class="f-label">Lista de Alumnos</span>
           </button>
 
           <button
             type="button"
             class="btn-f-action"
-            title="Presiona F2 o haz clic para consultar catálogo de cuentas"
+            title="Consultar catálogo de cuentas"
             @click="abrirF2Cuentas"
           >
-            <span class="f-badge">F2</span>
             <span class="f-label">Lista de Cuentas</span>
           </button>
         </div>
@@ -678,9 +677,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
           <button type="button" class="btn-action-danger" @click="cerrar">
             Salir
           </button>
-        </div>
-        <div class="footer-hint">
-          <kbd>ESC</kbd> = Salir
         </div>
       </footer>
 

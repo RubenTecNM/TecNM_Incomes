@@ -33,6 +33,7 @@ import ModalDepositoBancario from '../components/ModalDepositoBancario.vue'
 import ModalDepositoBancarioPropedeutico from '../components/ModalDepositoBancarioPropedeutico.vue'
 import ModalReciboProvisional from '../components/ModalReciboProvisional.vue'
 import ModalReciboProvisionalCancelar from '../components/ModalReciboProvisionalCancelar.vue'
+import ModalConsultaCancelacionRecibos from '../components/ModalConsultaCancelacionRecibos.vue'
 import * as cajaApi from '../api/cajaApi'
 import type {
   AdeudoAlumno,
@@ -101,6 +102,7 @@ const mostrarModalDepositoBancario = ref(false)
 const mostrarModalDepositoBancarioPropedeutico = ref(false)
 const mostrarModalReciboProvisional = ref(false)
 const mostrarModalReciboProvisionalCancelar = ref(false)
+const mostrarModalConsultaCancelacionRecibos = ref(false)
 const menuAbierto = ref<'catalogo' | 'imprimir' | 'control' | 'utilerias' | null>(null)
 
 function toggleMenu(menu: 'catalogo' | 'imprimir' | 'control' | 'utilerias'): void {
@@ -188,6 +190,11 @@ function abrirModalReciboProvisional(): void {
 
 function abrirModalReciboProvisionalCancelar(): void {
   mostrarModalReciboProvisionalCancelar.value = true
+  cerrarMenus()
+}
+
+function abrirModalConsultaCancelacionRecibos(): void {
+  mostrarModalConsultaCancelacionRecibos.value = true
   cerrarMenus()
 }
 
@@ -897,26 +904,11 @@ onMounted(async () => {
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteIngresos">
                 <span>Reporte de Ingresos</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalPolizaIngresoPeriodo">
-                <span>Poliza de Ingreso Periodo</span>
-              </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteIngresosPeriodo">
-                <span>Reporte de Ingresos por Periodo</span>
-              </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteVarios">
                 <span>Reporte Varios</span>
               </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudores">
                 <span>Reporte Deudores</span>
-              </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresFechaCorte">
-                <span>Reporte Deudores Fecha de Corte</span>
-              </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresFechaCuenta">
-                <span>Reporte Deudores Fecha y Cuenta</span>
-              </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudoresInscritos">
-                <span>Reporte Deudores Inscritos</span>
               </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
                 <span>Deposito Bancario</span>
@@ -948,7 +940,7 @@ onMounted(async () => {
             </button>
 
             <div v-if="menuAbierto === 'control'" class="menubar-dropdown-panel" role="menu">
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalConsultaCancelacionRecibos">
                 <span>Consulta y Cancelación de Recibos</span>
               </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
@@ -1678,6 +1670,11 @@ onMounted(async () => {
     <ModalReciboProvisionalCancelar
       v-if="mostrarModalReciboProvisionalCancelar"
       @close="mostrarModalReciboProvisionalCancelar = false"
+    />
+
+    <ModalConsultaCancelacionRecibos
+      v-if="mostrarModalConsultaCancelacionRecibos"
+      @close="mostrarModalConsultaCancelacionRecibos = false"
     />
 
     <!-- Sistema de Notificaciones Flotantes (Toasts) -->
