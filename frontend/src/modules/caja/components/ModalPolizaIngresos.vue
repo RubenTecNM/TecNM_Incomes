@@ -423,7 +423,7 @@ async function cargarDatos(): Promise<void> {
           fecha: item.fechaOperacion ? item.fechaOperacion.split('T')[0] : '',
           fechaFormatted: formatearFechaIso(item.fechaOperacion),
           matricula: item.alumnoMatricula || 'N/D',
-          nombreAlumno: item.alumnoNombre || 'ESTUDIANTE REGISTRADO',
+          nombreAlumno: item.alumnoNombre || 'ALUMNOS EN GENERAL',
           cuenta: cuentaAsignada,
           concepto: conceptoDesc,
           conceptoImpresion: `${conceptoDesc}${sufijo}`,
@@ -433,10 +433,9 @@ async function cargarDatos(): Promise<void> {
           estado: (item.estadoRecibo || 'PAGADO').toUpperCase(),
         }
       })
-      // Combinar los movimientos de BD con los movimientos oficiales de la póliza de prueba (29/10/2026)
-      const idsExistentes = new Set(listaApi.map(x => x.numeroRecibo))
-      const mocksAdicionales = mockMovimientosPoliza.filter(m => !idsExistentes.has(m.numeroRecibo))
-      todosMovimientos.value = [...listaApi, ...mocksAdicionales]
+      // Ordenar por número de recibo ascendente (128628..128655)
+      listaApi.sort((a, b) => a.numeroRecibo - b.numeroRecibo)
+      todosMovimientos.value = listaApi
     } else {
       todosMovimientos.value = [...mockMovimientosPoliza]
     }
@@ -450,10 +449,7 @@ function buscar(): void {
 
   let lista = [...todosMovimientos.value]
 
-  // Excluir recibos cancelados de la póliza de ingresos
-  lista = lista.filter(m => m.estado !== 'CANCELADO')
-
-  // Filtro por Fechas / Periodo
+  // Filtro por Fechas / Periodo (búsqueda reutilizable)
   if (fechaInicio.value) {
     lista = lista.filter(m => !m.fecha || m.fecha >= fechaInicio.value)
   }
@@ -466,7 +462,7 @@ function buscar(): void {
     lista = lista.filter(m => m.formaPago === formaPagoFiltro.value)
   }
 
-  // Filtro por Cuenta
+  // Filtro por Cuenta o Concepto
   if (cuentaFiltro.value.trim()) {
     const c = cuentaFiltro.value.trim().toLowerCase()
     lista = lista.filter(m => m.cuenta.toLowerCase().includes(c) || m.concepto.toLowerCase().includes(c))
@@ -478,12 +474,14 @@ function buscar(): void {
 
 // ==========================================
 // Agrupación Contable para la Póliza Oficial
-// (Idéntica a la hoja fotografiada)
+// (Excluye movimientos cancelados)
 // ==========================================
 const filasPolizaAgrupadas = computed<FilaPolizaAgrupada[]>(() => {
   const mapa = new Map<string, FilaPolizaAgrupada>()
 
   for (const m of movimientosFiltrados.value) {
+    if (m.estado === 'CANCELADO') continue
+
     // La clave agrupa por Cuenta y Concepto de Impresión (distinguiendo efectivo de depósito)
     const clave = `${m.cuenta}_${m.conceptoImpresion}`
     if (!mapa.has(clave)) {
@@ -505,16 +503,17 @@ const filasPolizaAgrupadas = computed<FilaPolizaAgrupada[]>(() => {
 
 // ==========================================
 // Totales y Desglose de Caja
+// (Los recibos cancelados no suman)
 // ==========================================
 const totalCobroCaja = computed(() => {
   return movimientosFiltrados.value
-    .filter(m => m.formaPago === 'EFECTIVO')
+    .filter(m => m.formaPago === 'EFECTIVO' && m.estado !== 'CANCELADO')
     .reduce((acc, m) => acc + m.importe, 0)
 })
 
 const totalDepositoBancario = computed(() => {
   return movimientosFiltrados.value
-    .filter(m => m.formaPago === 'DEPOSITO')
+    .filter(m => m.formaPago === 'DEPOSITO' && m.estado !== 'CANCELADO')
     .reduce((acc, m) => acc + m.importe, 0)
 })
 
@@ -525,6 +524,26 @@ const totalGeneral = computed(() => {
 function formatearMoneda(valor: number): string {
   return valor.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })
 }
+
+function formatearMonedaReporte(valor: number): string {
+  const formateado = valor.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return `$ ${formateado}`
+}
+
+const tituloReporteImpresion = computed(() => {
+  if (fechaInicio.value && fechaFin.value) {
+    if (fechaInicio.value === fechaFin.value) {
+      return `REPORTE DE INGRESOS DE LA FECHA: ${formatearFechaIso(fechaInicio.value)}`
+    }
+    return `REPORTE DE INGRESOS DEL PERIODO: ${formatearFechaIso(fechaInicio.value)} AL ${formatearFechaIso(fechaFin.value)}`
+  }
+  if (fechaInicio.value) return `REPORTE DE INGRESOS A PARTIR DE: ${formatearFechaIso(fechaInicio.value)}`
+  if (fechaFin.value) return `REPORTE DE INGRESOS HASTA: ${formatearFechaIso(fechaFin.value)}`
+  return 'REPORTE GENERAL DE INGRESOS'
+})
 
 const subtituloPeriodo = computed(() => {
   if (fechaInicio.value && fechaFin.value) {
@@ -580,6 +599,20 @@ function handleKeydown(e: KeyboardEvent): void {
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   await cargarDatos()
+  // Si existen movimientos de la fecha del corte oficial (2026-10-29) o ayer, inicializar
+  const tieneCorteOficial = todosMovimientos.value.some(m => m.fecha === '2026-10-29')
+  const tieneAyer = todosMovimientos.value.some(m => m.fecha === obtenerFechaAyer())
+
+  if (tieneCorteOficial) {
+    fechaInicio.value = '2026-10-29'
+    fechaFin.value = '2026-10-29'
+  } else if (tieneAyer) {
+    fechaInicio.value = obtenerFechaAyer()
+    fechaFin.value = obtenerFechaAyer()
+  } else {
+    fechaInicio.value = ''
+    fechaFin.value = ''
+  }
   buscar()
 })
 
@@ -950,62 +983,75 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- SIMULACIÓN EXACTA DEL FORMATO FOTOGRAFIADO -->
+        <!-- SIMULACIÓN EXACTA DEL FORMATO FOTOGRAFIADO (5 COLUMNAS OFICIALES) -->
         <div class="print-paper-sheet printable-area">
-          <div class="paper-header">
-            <h2 class="institution-name">INSTITUTO TECNOLOGICO SUPERIOR DE MONCLOVA</h2>
-            <h3 class="report-main-title">POLIZA DE INGRESOS PROPIOS</h3>
+          <div class="paper-top-meta">
+            <span class="page-indicator-top">1 DE 1</span>
           </div>
 
-          <!-- Tabla contable con Cuenta, Concepto e Importe -->
+          <div class="paper-header">
+            <h2 class="institution-name">INSTITUTO TECNOLOGICO SUPERIOR DE MONCLOVA</h2>
+            <h3 class="report-main-title">{{ tituloReporteImpresion }}</h3>
+          </div>
+
+          <!-- Tabla contable de 5 columnas oficial idéntica a la hoja física -->
           <table class="paper-table">
             <thead>
               <tr>
-                <th class="th-cta">CUENTA</th>
-                <th class="th-cpto">CONCEPTO</th>
-                <th class="th-imp">IMPORTE</th>
+                <th class="th-folio">FOLIO</th>
+                <th class="th-concepto">CONCEPTO</th>
+                <th class="th-nombre">NOMBRE</th>
+                <th class="th-status">STATUS</th>
+                <th class="th-total">TOTAL</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="f in filasPolizaAgrupadas" :key="f.cuenta + f.concepto">
-                <td class="td-cta font-mono font-bold">{{ f.cuenta }}</td>
-                <td class="td-cpto font-bold">{{ f.concepto }}</td>
-                <td class="td-imp font-mono text-right font-bold">{{ formatearMoneda(f.importeTotal) }}</td>
+              <tr
+                v-for="m in movimientosFiltrados"
+                :key="m.id"
+                :class="{ 'row-cancelado': m.estado === 'CANCELADO' }"
+              >
+                <td class="td-folio font-mono font-bold">{{ m.folio }}</td>
+                <td class="td-concepto font-bold">{{ m.concepto }}</td>
+                <td class="td-nombre font-bold">{{ m.nombreAlumno }}</td>
+                <td class="td-status font-bold text-center">
+                  {{ m.estado === 'CANCELADO' ? 'CANCELADO' : (m.formaPago === 'EFECTIVO' ? 'CAJA' : 'DEPOSITO') }}
+                </td>
+                <td class="td-total font-mono font-bold text-right">
+                  {{ formatearMonedaReporte(m.importe) }}
+                </td>
               </tr>
-              <!-- Renglones vacíos estéticos como el papel oficial -->
-              <tr v-for="i in Math.max(0, 10 - filasPolizaAgrupadas.length)" :key="'empty_' + i" class="row-fill">
-                <td class="td-cta">&nbsp;</td>
-                <td class="td-cpto">&nbsp;</td>
-                <td class="td-imp">&nbsp;</td>
+              <!-- Renglones vacíos estéticos para simular el rayado continuo del reporte impreso -->
+              <tr v-for="i in Math.max(0, 22 - movimientosFiltrados.length)" :key="'empty_' + i" class="row-fill">
+                <td class="td-folio">&nbsp;</td>
+                <td class="td-concepto">&nbsp;</td>
+                <td class="td-nombre">&nbsp;</td>
+                <td class="td-status">&nbsp;</td>
+                <td class="td-total">&nbsp;</td>
               </tr>
             </tbody>
           </table>
 
           <!-- Bloque Inferior con Totales Contables y Firma -->
           <div class="paper-footer">
-            <div class="paper-date-stamp">
-              <span class="font-bold">{{ subtituloPeriodo }}</span>
+            <div class="paper-signature-box">
+              <div class="signature-line"></div>
+              <span class="signature-label">ELABORÓ</span>
             </div>
 
             <div class="paper-totals-box">
               <div class="total-row">
-                <span class="t-lbl">TOTAL DE COBRO EN CAJA</span>
-                <span class="t-val font-mono">{{ formatearMoneda(totalCobroCaja) }}</span>
+                <span class="t-lbl">EFECTIVO</span>
+                <span class="t-val font-mono">{{ formatearMonedaReporte(totalCobroCaja) }}</span>
               </div>
               <div class="total-row">
-                <span class="t-lbl">TOTAL DE DEPÓSITO BANCARIO</span>
-                <span class="t-val font-mono">{{ formatearMoneda(totalDepositoBancario) }}</span>
+                <span class="t-lbl">DEPOSITO</span>
+                <span class="t-val font-mono">{{ formatearMonedaReporte(totalDepositoBancario) }}</span>
               </div>
               <div class="total-row t-grand-total">
-                <span class="t-lbl">TOTAL:</span>
-                <span class="t-val font-mono font-bold">{{ formatearMoneda(totalGeneral) }}</span>
+                <span class="t-lbl">TOTAL</span>
+                <span class="t-val font-mono font-bold">{{ formatearMonedaReporte(totalGeneral) }}</span>
               </div>
-            </div>
-
-            <div class="paper-signature-box">
-              <div class="signature-line"></div>
-              <span class="signature-label">Elaboró</span>
-              <span class="page-indicator">1 DE 1</span>
             </div>
           </div>
         </div>
@@ -1637,64 +1683,92 @@ onUnmounted(() => {
 /* Hoja en blanco simulación papel */
 .print-paper-sheet {
   width: 100%;
-  max-width: 900px;
+  max-width: 950px;
   background: #ffffff;
   color: #000000;
-  padding: 2.2rem 2.8rem;
+  padding: 1.8rem 2.2rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
   border-radius: 2px;
-  font-family: 'Arial', sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   margin-bottom: 1.5rem;
+}
+
+.paper-top-meta {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.35rem;
+}
+
+.page-indicator-top {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #000000;
 }
 
 .paper-header {
   text-align: center;
-  border-bottom: 2px solid #000000;
-  padding-bottom: 0.65rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
 }
 
 .institution-name {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 900;
   margin: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #000000;
 }
 
 .report-main-title {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 900;
   margin: 0.25rem 0 0 0;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #000000;
 }
 
 .paper-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
-  margin-bottom: 1.5rem;
+  font-size: 0.72rem;
+  margin-bottom: 1.25rem;
 }
 
 .paper-table th,
 .paper-table td {
   border: 1px solid #000000;
-  padding: 0.4rem 0.65rem;
+  padding: 0.22rem 0.45rem;
+  line-height: 1.2;
+  color: #000000;
 }
 
 .paper-table th {
-  background: #F1F5F9;
+  background: transparent;
   font-weight: 900;
   text-align: center;
+  font-size: 0.74rem;
+  letter-spacing: 0.3px;
 }
 
-.th-cta { width: 180px; }
-.th-cpto { width: auto; }
-.th-imp { width: 140px; text-align: right; }
+.th-folio { width: 75px; text-align: center; }
+.th-concepto { width: 240px; text-align: left; }
+.th-nombre { width: auto; text-align: left; }
+.th-status { width: 95px; text-align: center; }
+.th-total { width: 100px; text-align: right; }
 
-.td-cta { text-align: center; }
+.td-folio { text-align: center; }
+.td-concepto { text-align: left; text-transform: uppercase; }
+.td-nombre { text-align: left; text-transform: uppercase; }
+.td-status { text-align: center; }
+.td-total { text-align: right; white-space: nowrap; }
+
+.row-cancelado td {
+  color: #000000;
+}
 
 .row-fill td {
-  height: 22px;
+  height: 19px;
 }
 
 /* Bloque Inferior con Totales Contables y Firma */
@@ -1702,45 +1776,16 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 2rem;
-  padding-top: 1rem;
-}
-
-.paper-date-stamp {
-  font-size: 0.82rem;
-  width: 220px;
-}
-
-.paper-totals-box {
-  border: 1px solid #000000;
-  width: 280px;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.35rem 0.65rem;
-  border-bottom: 1px solid #E2E8F0;
-  font-size: 0.75rem;
-}
-
-.total-row:last-child {
-  border-bottom: none;
-}
-
-.t-lbl { font-weight: 700; }
-
-.t-grand-total {
-  background: #F1F5F9;
-  font-weight: 900;
-  font-size: 0.82rem;
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
 }
 
 .paper-signature-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 200px;
+  width: 180px;
+  margin-left: 2rem;
 }
 
 .signature-line {
@@ -1750,14 +1795,38 @@ onUnmounted(() => {
 }
 
 .signature-label {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #000000;
 }
 
-.page-indicator {
-  font-size: 0.72rem;
-  color: #64748B;
-  margin-top: 0.25rem;
+.paper-totals-box {
+  border: 1px solid #000000;
+  width: 230px;
+  background: transparent;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.22rem 0.55rem;
+  border-bottom: 1px solid #000000;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+.total-row:last-child {
+  border-bottom: none;
+}
+
+.t-lbl { font-weight: 700; }
+
+.t-grand-total {
+  background: transparent;
+  font-weight: 900;
+  font-size: 0.76rem;
 }
 
 /* Footer institucional */
