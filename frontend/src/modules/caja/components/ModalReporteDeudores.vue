@@ -4,6 +4,7 @@ import { useTheme } from '../../../shared/composables/useTheme'
 import * as cajaApi from '../api/cajaApi'
 import type { AlumnoCaja, ConceptoCatalogo, PeriodoAcademicoItem } from '../types/caja'
 import StudentSearchDropdown from './StudentSearchDropdown.vue'
+import ConceptSearchDropdown from './ConceptSearchDropdown.vue'
 import UiPagination from '../../../shared/components/UiPagination.vue'
 
 const emit = defineEmits<{
@@ -59,10 +60,44 @@ function seleccionarAlumnoSugerido(a: AlumnoCaja): void {
 }
 
 // ==========================================
-// 2. Filtro Cuenta / Concepto
+// 2. Filtro Cuenta / Concepto (editable con doble click + ConceptSearchDropdown)
 // ==========================================
 const activarCuenta = ref(false)
 const conceptoSeleccionado = ref('')
+const conceptoEditable = ref(false)
+const mostrarSugerenciasConceptos = ref(false)
+const conceptosReales = ref<ConceptoCatalogo[]>([])
+const inputConceptoRef = ref<HTMLInputElement | null>(null)
+
+const sugerenciasConceptosFiltradas = computed<ConceptoCatalogo[]>(() => {
+  const q = conceptoSeleccionado.value.trim().toLowerCase()
+  if (!q) return conceptosReales.value.slice(0, 12)
+  return conceptosReales.value
+    .filter(c =>
+      c.descripcion.toLowerCase().includes(q)
+      || c.clave.toLowerCase().includes(q)
+      || (c.categoria && c.categoria.toLowerCase().includes(q)))
+    .slice(0, 12)
+})
+
+function habilitarEscrituraConcepto(): void {
+  conceptoEditable.value = true
+  mostrarSugerenciasConceptos.value = true
+  setTimeout(() => inputConceptoRef.value?.focus(), 0)
+}
+
+function seleccionarConceptoSugerido(c: ConceptoCatalogo): void {
+  conceptoSeleccionado.value = c.descripcion
+  mostrarSugerenciasConceptos.value = false
+  conceptoEditable.value = false
+  buscar()
+}
+
+function ocultarConceptosConDelay(): void {
+  setTimeout(() => {
+    mostrarSugerenciasConceptos.value = false
+  }, 150)
+}
 
 const conceptosCatalogo = ref<{ id: string; nombre: string }[]>([
   { id: '', nombre: '-- Seleccionar Concepto / Cuenta --' },
@@ -249,7 +284,8 @@ onMounted(async () => {
   try {
     const conceptosDb = await cajaApi.getConceptos()
     if (conceptosDb && conceptosDb.length > 0) {
-      const mapeados = conceptosDb.map(c => ({ id: c.descripcion, nombre: c.descripcion }))
+      conceptosReales.value = conceptosDb
+      const mapeados = conceptosDb.map(c => ({ id: c.descripcion, nombre: `${c.clave} · ${c.descripcion} ($${(c.cuotaBase ?? 0).toFixed(2)})` }))
       conceptosCatalogo.value = [
         { id: '', nombre: '-- Seleccionar Concepto / Cuenta --' },
         ...mapeados,
@@ -299,16 +335,15 @@ async function buscar(): Promise<void> {
   isBuscando.value = true
   busquedaRealizada.value = true
 
-  const filtrosQuery: { matricula?: string; concepto?: string; periodoId?: number; estado?: string } = {
-    estado: 'PENDIENTE',
-  }
+  const filtrosQuery: { matricula?: string; nombre?: string; concepto?: string; periodoId?: number; estado?: string } = {}
 
   if (activarCliente.value) {
     if (matricula.value.trim()) filtrosQuery.matricula = matricula.value.trim()
+    if (nombreCliente.value.trim()) filtrosQuery.nombre = nombreCliente.value.trim()
   }
 
-  if (activarCuenta.value && conceptoSeleccionado.value) {
-    filtrosQuery.concepto = conceptoSeleccionado.value
+  if (activarCuenta.value && conceptoSeleccionado.value.trim()) {
+    filtrosQuery.concepto = conceptoSeleccionado.value.trim()
   }
 
   if (activarFecha.value && periodoSeleccionado.value) {
@@ -354,11 +389,11 @@ async function buscar(): Promise<void> {
         anio: a.periodoAnio || a.periodo?.anio || 2026,
         saldoAdeudo: Number(a.saldoPendiente ?? a.montoOriginal ?? 0),
         fechaLimite: a.fechaLimite || '',
-        estatus: (a.estado?.toUpperCase() === 'EN PRORROGA' ? 'EN PRORROGA' : (a.estado?.toUpperCase() === 'VENCIDO' ? 'VENCIDO' : 'PENDIENTE')) as any,
+        estatus: (a.estado?.toUpperCase() === 'EN PRORROGA' ? 'EN PRORROGA' : (a.estado?.toUpperCase() === 'VENCIDO' ? 'VENCIDO' : (a.estado?.toUpperCase() === 'PARCIAL' ? 'PARCIAL' : 'PENDIENTE'))) as any,
       }))
+      paginaActual.value = 1
     } else {
-      // Fallback inteligente con datos simulados
-      filtrarMockData()
+      resultados.value = []
     }
   } catch {
     // Si la API falla, aplicamos filtros locales sobre los datos simulados
@@ -566,13 +601,30 @@ function handleKeydown(e: KeyboardEvent): void {
                 :class="{ active: activarCuenta }"
               >
                 <legend class="fieldset-legend">Cuenta</legend>
-                <div class="fieldset-body">
+                <div class="fieldset-body" style="position: relative;">
                   <div class="field-item item-concepto-full">
-                    <label for="select-deud-concepto" class="field-label">Concepto:</label>
+                    <label for="input-deud-concepto" class="field-label">Concepto (doble clic para escribir o desglosar):</label>
+                    <input
+                      v-if="conceptoEditable"
+                      id="input-deud-concepto"
+                      ref="inputConceptoRef"
+                      v-model="conceptoSeleccionado"
+                      type="text"
+                      class="tecnm-input"
+                      placeholder="Escribe clave, concepto o categoría..."
+                      autocomplete="off"
+                      @focus="mostrarSugerenciasConceptos = true"
+                      @input="mostrarSugerenciasConceptos = true"
+                      @blur="ocultarConceptosConDelay"
+                      @keyup.enter="buscar"
+                    />
                     <select
+                      v-else
                       id="select-deud-concepto"
                       v-model="conceptoSeleccionado"
                       class="tecnm-input tecnm-select"
+                      title="Doble clic para escribir y buscar en el catálogo"
+                      @dblclick="habilitarEscrituraConcepto"
                       @change="buscar"
                     >
                       <option v-for="c in conceptosCatalogo" :key="c.id" :value="c.id">
@@ -580,6 +632,12 @@ function handleKeydown(e: KeyboardEvent): void {
                       </option>
                     </select>
                   </div>
+
+                  <ConceptSearchDropdown
+                    :sugerencias="sugerenciasConceptosFiltradas"
+                    :visible="mostrarSugerenciasConceptos && activarCuenta"
+                    @select="seleccionarConceptoSugerido"
+                  />
                 </div>
               </fieldset>
             </div>

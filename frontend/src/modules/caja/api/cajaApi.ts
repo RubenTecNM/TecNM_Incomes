@@ -155,7 +155,7 @@ export async function getBecasAlumno(matricula: string): Promise<BecaAlumno[]> {
   return data
 }
 
-export async function getAdeudosGeneral(filtros?: { matricula?: string; concepto?: string; periodoId?: number; estado?: string }): Promise<any[]> {
+export async function getAdeudosGeneral(filtros?: { matricula?: string; nombre?: string; concepto?: string; periodoId?: number; estado?: string }): Promise<any[]> {
   const { data } = await http.get<any[]>('/caja/adeudos', { params: filtros })
   return data
 }
