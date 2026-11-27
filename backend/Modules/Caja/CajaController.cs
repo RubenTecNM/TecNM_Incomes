@@ -8,20 +8,8 @@ public sealed class CajaController(CajaService cajaService) : ControllerBase
 {
     // =========================================================================
     // 1. Alumnos and Control Escolar -> Decoupled to AlumnosController
-    // 2. Adeudos and Becas for Students -> Decoupled to AlumnosController
+    // 2. Adeudos and Becas -> Decoupled to AdeudosController
     // =========================================================================
-
-    [HttpGet("adeudos")]
-    public async Task<ActionResult<List<AdeudoDetalleDTO>>> ConsultarAdeudosGeneral(
-        [FromQuery] string? matricula,
-        [FromQuery] string? concepto,
-        [FromQuery] int? periodoId,
-        [FromQuery] string? estado,
-        CancellationToken cancellationToken)
-    {
-        var adeudos = await cajaService.ConsultarAdeudosGeneralAsync(matricula, concepto, periodoId, estado, cancellationToken);
-        return Ok(adeudos);
-    }
 
     // =========================================================================
     // 3. Empleados/Cajeros y Cuentas de Cobro (Catálogos y Distinción)

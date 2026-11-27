@@ -53,44 +53,8 @@ public sealed record CambiarMatriculaRequest(
     int? IdPeriodo = null);
 
 // =============================================================================
-// 3. Adeudos y Becas
+// 3. Adeudos y Becas -> Desacoplados a TecNM.Api.Modules.Adeudos
 // =============================================================================
-
-public sealed record AdeudoDTO(
-    long IdAdeudo,
-    string Matricula,
-    string ConceptoCobro,
-    int IdPeriodo,
-    string PeriodoCodigo,
-    decimal MontoOriginal,
-    decimal SaldoPendiente,
-    DateOnly? FechaLimite,
-    string Estado);
-
-public sealed record AdeudoDetalleDTO(
-    long IdAdeudo,
-    string Matricula,
-    string AlumnoNombre,
-    string Carrera,
-    string ConceptoCobro,
-    string PeriodoCodigo,
-    short PeriodoAnio,
-    string PeriodoCiclo,
-    decimal MontoOriginal,
-    decimal SaldoPendiente,
-    DateOnly? FechaLimite,
-    string Estado);
-
-public sealed record BecaDTO(
-    long IdBeca,
-    string Matricula,
-    int IdPeriodo,
-    string PeriodoCodigo,
-    string TipoBeca,
-    decimal? Porcentaje,
-    decimal? MontoFijo,
-    string? Motivo,
-    bool Activa);
 
 // =============================================================================
 // 4. Cuentas y Empleados (Distinción entre Usuario, Cuenta y Banco)
