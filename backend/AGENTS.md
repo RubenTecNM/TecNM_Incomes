@@ -44,3 +44,10 @@ Prueba de humo prevista: `curl` con cookie jar sobre HTTPS. Debe cubrir login in
 - [`Modules/Auth/`](./Modules/Auth/): controller, service y DTOs del slice.
 - [`Modules/Auth/specs/`](./Modules/Auth/specs/): contexto backend de Auth.
 - [Contrato raíz](../specs/auth.spec.md): única fuente de verdad compartida.
+
+## Reglas de Compatibilidad Web (Multiplataforma y Safari)
+
+- **Viewport Móvil:** Usar `dvh` (Dynamic Viewport Height) en lugar de `100vh` en CSS para evitar que las barras de navegación móviles de Safari recorten o tapen el contenido inferior.
+- **Flexbox y Grid:** Evitar propiedades experimentales; asegurar soporte cruzado en Safari y navegadores móviles de hace al menos 2 versiones.
+- **Tamaño Táctil:** Los botones y elementos interactivos deben tener un área táctil mínima de 44x44px.
+- **Desbordamientos:** Controlar siempre con `box-sizing: border-box;` y `max-width: 100%` para prevenir scroll horizontal indeseado en pantallas pequeñas.
