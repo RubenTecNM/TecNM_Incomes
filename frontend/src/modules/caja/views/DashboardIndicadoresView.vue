@@ -17,6 +17,7 @@ const { dark } = useTheme()
 const usuarioActual = ref('Administrador General')
 const scopeLabel = ref('Vista Global (Administrador)')
 const fechaHoy = ref(new Date().toISOString().split('T')[0])
+const fechaReferencia = computed(() => fechaHoy.value)
 const isCargando = ref(true)
 const isExportandoPdf = ref(false)
 

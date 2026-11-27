@@ -282,9 +282,6 @@ setInterval(actualizarHora, 1000)
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudores">
                 <span>Reporte Deudores</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
-                <span>Deposito Bancario</span>
-              </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReciboProvisional">
                 <span>Recibo Provisional</span>
               </button>
@@ -306,10 +303,10 @@ setInterval(actualizarHora, 1000)
             </button>
             <div v-if="menuAbierto === 'control'" class="menubar-dropdown-panel" role="menu">
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalConsultaCancelacionRecibos">
-                <span>Consulta y Cancelación de Recibos</span>
+                <span>Cancelación de Recibos</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
-                <span>Corte por Empleado</span>
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
+                <span>Depósito Bancario</span>
               </button>
             </div>
           </div>

@@ -18,15 +18,21 @@ interface BackendReciboResponse {
   numeroRecibo: number
   folioAdministrativo: string
   fechaOperacion: string
-  alumnoMatricula: string
-  alumnoNombre: string
-  alumnoCarrera: string
-  alumnoSemestre: number
-  alumnoTurno: string
+  matricula?: string
+  nombreCompleto?: string
+  carrera?: string
+  semestre?: number
+  turno?: string
+  alumnoMatricula?: string
+  alumnoNombre?: string
+  alumnoCarrera?: string
+  alumnoSemestre?: number
+  alumnoTurno?: string
   metodoPago: string
   referenciaBancaria?: string
   cuentaBancaria?: string
   fechaBancaria?: string
+  fechaEfectivaPago?: string
   subtotal: number
   descuentoTotal: number
   total: number
@@ -53,13 +59,13 @@ function adaptReciboResponse(item: BackendReciboResponse): ReciboCaja {
     numeroRecibo: item.numeroRecibo,
     folioAdministrativo: item.folioAdministrativo,
     fechaOperacion: item.fechaOperacion?.split('T')[0] ?? new Date().toISOString().split('T')[0],
-    fechaEfectivaPago: item.fechaBancaria,
+    fechaEfectivaPago: item.fechaEfectivaPago || item.fechaBancaria,
     alumno: {
-      matricula: item.alumnoMatricula,
-      nombreCompleto: item.alumnoNombre,
-      carrera: item.alumnoCarrera,
-      semestre: item.alumnoSemestre,
-      turno: (item.alumnoTurno as any) || 'Matutino',
+      matricula: item.matricula || item.alumnoMatricula || '',
+      nombreCompleto: item.nombreCompleto || item.alumnoNombre || 'Sin Nombre',
+      carrera: item.carrera || item.alumnoCarrera || '',
+      semestre: item.semestre ?? item.alumnoSemestre ?? 1,
+      turno: (item.turno as any) || (item.alumnoTurno as any) || 'Matutino',
       estatus: 'Inscrito',
       tieneBeca: item.descuentoTotal > 0,
       porcentajeBeca: item.subtotal > 0 ? (item.descuentoTotal / item.subtotal) * 100 : 0,

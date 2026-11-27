@@ -801,6 +801,7 @@ function abrirImpresion(recibo?: ReciboCaja): void {
       descuentoTotal: totalDescuentos.value,
       total: granTotal.value,
       estado: estadoRecibo.value,
+      cajeroNombre: cajeroActual.value,
     }
   }
   mostrarModalImprimir.value = true
@@ -1182,9 +1183,6 @@ onMounted(async () => {
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReporteDeudores">
                 <span>Reporte Deudores</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
-                <span>Deposito Bancario</span>
-              </button>
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalReciboProvisional">
                 <span>Recibo Provisional</span>
               </button>
@@ -1207,10 +1205,10 @@ onMounted(async () => {
 
             <div v-if="menuAbierto === 'control'" class="menubar-dropdown-panel" role="menu">
               <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalConsultaCancelacionRecibos">
-                <span>Consulta y Cancelación de Recibos</span>
+                <span>Cancelación de Recibos</span>
               </button>
-              <button type="button" class="dropdown-entry" role="menuitem" @click="cerrarMenus">
-                <span>Corte por Empleado</span>
+              <button type="button" class="dropdown-entry" role="menuitem" @click="abrirModalDepositoBancario">
+                <span>Depósito Bancario</span>
               </button>
             </div>
           </div>
@@ -1903,9 +1901,9 @@ onMounted(async () => {
                     {{ rec.estado }}
                   </UiBadge>
                 </div>
-                <div class="rec-student">{{ rec.alumno.nombreCompleto }}</div>
+                <div class="rec-student" :title="rec.alumno?.nombreCompleto">{{ rec.alumno?.nombreCompleto || 'ALUMNO REGISTRADO' }}</div>
                 <div class="rec-bottom">
-                  <span class="rec-matricula">{{ rec.alumno.matricula }}</span>
+                  <span class="rec-matricula">{{ rec.alumno?.matricula || '---' }}</span>
                   <span class="rec-total font-bold">${{ rec.total.toFixed(2) }}</span>
                 </div>
               </div>
@@ -3626,6 +3624,35 @@ button.menubar-title-tag:active {
   color: var(--color-text-secondary, #64748B);
 }
 
+/* Modo oscuro para Turno Actual e Indicadores de Caja */
+.dark-theme .summary-chip,
+:global([data-theme="dark"]) .summary-chip {
+  background: #112240;
+  border-color: #233554;
+}
+
+.dark-theme .summary-chip.highlight,
+:global([data-theme="dark"]) .summary-chip.highlight {
+  background: rgba(30, 58, 138, 0.45);
+  border-color: #3B82F6;
+}
+
+.dark-theme .summary-chip .chip-number,
+:global([data-theme="dark"]) .summary-chip .chip-number {
+  color: #60A5FA;
+}
+
+.dark-theme .summary-chip.highlight .chip-number,
+:global([data-theme="dark"]) .summary-chip.highlight .chip-number {
+  color: #38BDF8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.dark-theme .summary-chip .chip-label,
+:global([data-theme="dark"]) .summary-chip .chip-label {
+  color: #94A3B8;
+}
+
 .caja-sidebar-panel {
   width: 100%;
   overflow-x: hidden;
@@ -3759,9 +3786,60 @@ button.menubar-title-tag:active {
 .rec-bottom {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.78rem;
   color: var(--color-text-secondary, #64748B);
   margin-top: 4px;
+}
+
+.rec-matricula {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748B);
+}
+
+.rec-total {
+  font-weight: 700;
+  color: var(--color-primary, #1B396A);
+}
+
+/* Modo oscuro para tarjetas del historial de recibos */
+.dark-theme .recent-receipt-card,
+:global([data-theme="dark"]) .recent-receipt-card {
+  background: #112240;
+  border-color: #233554;
+}
+
+.dark-theme .recent-receipt-card:hover,
+:global([data-theme="dark"]) .recent-receipt-card:hover {
+  border-color: #3B82F6;
+  background: #162B4D;
+}
+
+.dark-theme .recent-receipt-card.active,
+:global([data-theme="dark"]) .recent-receipt-card.active {
+  border-color: #60A5FA;
+  background: rgba(30, 58, 138, 0.4);
+}
+
+.dark-theme .rec-num,
+:global([data-theme="dark"]) .rec-num {
+  color: #F8FAFC;
+}
+
+.dark-theme .rec-student,
+:global([data-theme="dark"]) .rec-student {
+  color: #F1F5F9;
+}
+
+.dark-theme .rec-matricula,
+:global([data-theme="dark"]) .rec-matricula {
+  color: #94A3B8;
+}
+
+.dark-theme .rec-total,
+:global([data-theme="dark"]) .rec-total {
+  color: #38BDF8;
 }
 
 /* 10. Modales de Cancelación e Impresión */
