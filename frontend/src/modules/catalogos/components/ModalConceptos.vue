@@ -21,7 +21,8 @@ const formConcepto = ref({
   clave: '',
   descripcion: '',
   cuotaBase: '',
-  categoria: 'Inscripción',
+  categoria: '',
+  nuevaCategoria: '',
   aplicaBeca: false,
   cuentaReferencia: '',
   orden: '',
@@ -143,6 +144,16 @@ async function guardarConcepto(): Promise<void> {
     return
   }
 
+  const categoriaFinal = formConcepto.value.categoria === '__NEW__'
+    ? formConcepto.value.nuevaCategoria.trim()
+    : formConcepto.value.categoria.trim()
+
+  if (!categoriaFinal) {
+    esErrorFeedback.value = true
+    mensajeFeedback.value = 'Selecciona o agrega una categoría para el concepto.'
+    return
+  }
+
   isCargando.value = true
   esErrorFeedback.value = false
   mensajeFeedback.value = ''
@@ -154,7 +165,7 @@ async function guardarConcepto(): Promise<void> {
       await updateConcepto(formConcepto.value.id, {
         descripcion: formConcepto.value.descripcion.trim(),
         cuotaBase: cuota,
-        categoria: formConcepto.value.categoria.trim(),
+        categoria: categoriaFinal,
         aplicaBeca: formConcepto.value.aplicaBeca,
         cuentaReferencia: formConcepto.value.cuentaReferencia.trim() || null,
         orden: ordenVal,
@@ -166,7 +177,7 @@ async function guardarConcepto(): Promise<void> {
         clave: formConcepto.value.clave.trim(),
         descripcion: formConcepto.value.descripcion.trim(),
         cuotaBase: cuota,
-        categoria: formConcepto.value.categoria.trim(),
+        categoria: categoriaFinal,
         aplicaBeca: formConcepto.value.aplicaBeca,
         cuentaReferencia: formConcepto.value.cuentaReferencia.trim() || null,
         orden: ordenVal,
@@ -177,22 +188,9 @@ async function guardarConcepto(): Promise<void> {
     limpiar()
     await cargarCategorias()
     await cargarConceptos()
-  } catch {
-    // Si la nueva ruta no estuviera lista en el contenedor, guarda mediante la API existente
-    try {
-      await crearCuenta({
-        cuenta: formConcepto.value.clave.trim(),
-        descripcion: formConcepto.value.descripcion.trim(),
-        costo: cuota,
-        categoria: formConcepto.value.categoria.trim(),
-      })
-      mensajeFeedback.value = `Concepto '${formConcepto.value.clave}' registrado exitosamente.`
-      limpiar()
-      await cargarConceptos()
-    } catch (err: any) {
-      esErrorFeedback.value = true
-      mensajeFeedback.value = err.response?.data?.message || 'Error al guardar el concepto.'
-    }
+  } catch (err: any) {
+    esErrorFeedback.value = true
+    mensajeFeedback.value = err.response?.data?.message || 'Error al guardar el concepto en el servidor C#.'
   } finally {
     isCargando.value = false
   }
@@ -205,6 +203,7 @@ function seleccionarFila(item: ConceptoCobroItem): void {
     descripcion: item.descripcion,
     cuotaBase: String(item.cuotaBase),
     categoria: item.categoria,
+    nuevaCategoria: '',
     aplicaBeca: item.aplicaBeca,
     cuentaReferencia: item.cuentaReferencia || '',
     orden: item.orden ? String(item.orden) : '',
@@ -254,7 +253,8 @@ function limpiar(): void {
     clave: '',
     descripcion: '',
     cuotaBase: '',
-    categoria: 'Inscripción',
+    categoria: '',
+    nuevaCategoria: '',
     aplicaBeca: false,
     cuentaReferencia: '',
     orden: '',
@@ -327,17 +327,26 @@ onUnmounted(() => {
 
           <div class="form-group">
             <label for="input-categoria" class="form-label">Categoría:</label>
-            <input
+            <select
               id="input-categoria"
               v-model="formConcepto.categoria"
+              class="tecnm-input tecnm-select"
+            >
+              <option value="">-- Agrega o selecciona categoría --</option>
+              <option v-for="cat in listaCategorias" :key="cat" :value="cat">
+                {{ cat }}
+              </option>
+              <option value="__NEW__">+ Agregar nueva categoría...</option>
+            </select>
+            <input
+              v-if="formConcepto.categoria === '__NEW__'"
+              v-model="formConcepto.nuevaCategoria"
               type="text"
               class="tecnm-input"
-              list="categoria-suggestions"
-              placeholder="Ej. Inscripción, Constancias, Cursos"
+              style="margin-top: 6px;"
+              placeholder="Escribe el nombre de la nueva categoría..."
+              autocomplete="off"
             />
-            <datalist id="categoria-suggestions">
-              <option v-for="cat in listaCategorias" :key="cat" :value="cat" />
-            </datalist>
           </div>
 
           <!-- Fila 2: Descripción amplia -->
