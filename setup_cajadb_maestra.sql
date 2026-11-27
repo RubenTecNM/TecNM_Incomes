@@ -312,6 +312,24 @@ CREATE TABLE migration_issues (
     resolution_notes  TEXT
 );
 
+-- 16. Audit Log (Tópicos de Base de Datos - Bitácora de Transacciones Activa)
+CREATE TABLE audit_logs (
+    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    table_name        VARCHAR(50) NOT NULL,
+    operation         VARCHAR(10) NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
+    record_id         VARCHAR(100),
+    performed_by      VARCHAR(50) NOT NULL DEFAULT CURRENT_USER,
+    performed_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    client_ip         INET,
+    old_values        JSONB,
+    new_values        JSONB,
+    changed_fields    TEXT[]
+);
+
+CREATE INDEX idx_audit_table_op ON audit_logs(table_name, operation);
+CREATE INDEX idx_audit_record_id ON audit_logs(record_id);
+CREATE INDEX idx_audit_performed_at ON audit_logs(performed_at DESC);
+
 -- ----------------------------------------------------------------------------
 -- 3. POBLACIÓN DE CATÁLOGOS BASE (DATOS INSTITUCIONALES EN ESPAÑOL)
 -- ----------------------------------------------------------------------------
@@ -438,6 +456,127 @@ CREATE TRIGGER trg_reverse_debt_cancellation
 AFTER UPDATE OF status ON receipts
 FOR EACH ROW
 EXECUTE FUNCTION fn_reverse_debt_on_cancellation();
+
+-- ----------------------------------------------------------------------------
+-- 4.1. FUNCIÓN Y TRIGGERS DE AUDITORÍA ACTIVA (TÓPICOS DE BASE DE DATOS)
+-- Registra usuario, fecha/hora, operación (INSERT, UPDATE, DELETE) y detalle
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_audit_trail_logger()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_user VARCHAR(50);
+    v_record_id VARCHAR(100);
+    v_old JSONB := NULL;
+    v_new JSONB := NULL;
+    v_changed TEXT[] := ARRAY[]::TEXT[];
+    v_key TEXT;
+BEGIN
+    -- Determinar el usuario que realizó la acción
+    IF TG_OP = 'DELETE' THEN
+        v_user := COALESCE(
+            NULLIF(current_setting('app.current_user', true), ''),
+            CASE WHEN TG_TABLE_NAME = 'receipts' THEN OLD.cashier_username ELSE CURRENT_USER END
+        );
+        v_record_id := CASE 
+            WHEN TG_TABLE_NAME = 'receipts' THEN OLD.id::TEXT
+            WHEN TG_TABLE_NAME = 'student_debts' THEN OLD.debt_id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_concepts' THEN OLD.id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_transactions' THEN OLD.transaction_id::TEXT
+            ELSE NULL
+        END;
+        v_old := to_jsonb(OLD);
+    ELSIF TG_OP = 'UPDATE' THEN
+        v_user := COALESCE(
+            NULLIF(current_setting('app.current_user', true), ''),
+            CASE WHEN TG_TABLE_NAME = 'receipts' THEN COALESCE(NEW.cashier_username, OLD.cashier_username) ELSE CURRENT_USER END
+        );
+        v_record_id := CASE 
+            WHEN TG_TABLE_NAME = 'receipts' THEN NEW.id::TEXT
+            WHEN TG_TABLE_NAME = 'student_debts' THEN NEW.debt_id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_concepts' THEN NEW.id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_transactions' THEN NEW.transaction_id::TEXT
+            ELSE NULL
+        END;
+        v_old := to_jsonb(OLD);
+        v_new := to_jsonb(NEW);
+
+        -- Calcular campos modificados
+        FOR v_key IN SELECT jsonb_object_keys(v_new)
+        LOOP
+            IF (v_old -> v_key) IS DISTINCT FROM (v_new -> v_key) THEN
+                v_changed := array_append(v_changed, v_key);
+            END IF;
+        END LOOP;
+    ELSIF TG_OP = 'INSERT' THEN
+        v_user := COALESCE(
+            NULLIF(current_setting('app.current_user', true), ''),
+            CASE WHEN TG_TABLE_NAME = 'receipts' THEN NEW.cashier_username ELSE CURRENT_USER END
+        );
+        v_record_id := CASE 
+            WHEN TG_TABLE_NAME = 'receipts' THEN NEW.id::TEXT
+            WHEN TG_TABLE_NAME = 'student_debts' THEN NEW.debt_id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_concepts' THEN NEW.id::TEXT
+            WHEN TG_TABLE_NAME = 'payment_transactions' THEN NEW.transaction_id::TEXT
+            ELSE NULL
+        END;
+        v_new := to_jsonb(NEW);
+    END IF;
+
+    -- Insertar en la bitácora activa
+    INSERT INTO audit_logs (
+        table_name,
+        operation,
+        record_id,
+        performed_by,
+        performed_at,
+        client_ip,
+        old_values,
+        new_values,
+        changed_fields
+    ) VALUES (
+        TG_TABLE_NAME,
+        TG_OP,
+        v_record_id,
+        v_user,
+        CURRENT_TIMESTAMP,
+        inet_client_addr(),
+        v_old,
+        v_new,
+        v_changed
+    );
+
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers de auditoría para entidades críticas
+DROP TRIGGER IF EXISTS trg_audit_receipts ON receipts;
+CREATE TRIGGER trg_audit_receipts
+AFTER INSERT OR UPDATE OR DELETE ON receipts
+FOR EACH ROW
+EXECUTE FUNCTION fn_audit_trail_logger();
+
+DROP TRIGGER IF EXISTS trg_audit_student_debts ON student_debts;
+CREATE TRIGGER trg_audit_student_debts
+AFTER INSERT OR UPDATE OR DELETE ON student_debts
+FOR EACH ROW
+EXECUTE FUNCTION fn_audit_trail_logger();
+
+DROP TRIGGER IF EXISTS trg_audit_payment_concepts ON payment_concepts;
+CREATE TRIGGER trg_audit_payment_concepts
+AFTER INSERT OR UPDATE OR DELETE ON payment_concepts
+FOR EACH ROW
+EXECUTE FUNCTION fn_audit_trail_logger();
+
+DROP TRIGGER IF EXISTS trg_audit_payment_transactions ON payment_transactions;
+CREATE TRIGGER trg_audit_payment_transactions
+AFTER INSERT OR UPDATE OR DELETE ON payment_transactions
+FOR EACH ROW
+EXECUTE FUNCTION fn_audit_trail_logger();
 
 -- ----------------------------------------------------------------------------
 -- 5. VISTAS ANALÍTICAS EN INGLÉS (REPORTES FORMALES)
@@ -750,5 +889,19 @@ SELECT
     is_resolved       AS resuelta,
     resolution_notes  AS notas_resolucion
 FROM migration_issues;
+
+CREATE OR REPLACE VIEW bitacora_auditoria AS
+SELECT
+    id,
+    table_name        AS tabla_afectada,
+    operation         AS operacion,
+    record_id         AS id_registro,
+    performed_by      AS realizado_por,
+    performed_at      AS fecha_hora,
+    client_ip         AS ip_cliente,
+    old_values        AS valores_anteriores,
+    new_values        AS valores_nuevos,
+    changed_fields    AS campos_modificados
+FROM audit_logs;
 
 COMMIT;
