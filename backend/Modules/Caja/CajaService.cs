@@ -310,69 +310,7 @@ public sealed class CajaService(
         return new EmpleadoDTO(user.Id, user.Username, user.Name, user.Email, user.Role, user.IsActive);
     }
 
-    public async Task<List<CuentaConceptoDTO>> ListarCuentasConceptosAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await dbContext.ConceptosCobro
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.Clave)
-                .Select(c => new CuentaConceptoDTO(
-                    c.Id,
-                    c.Clave,
-                    c.Descripcion,
-                    c.CuotaBase,
-                    c.Categoria,
-                    c.AplicaBeca))
-                .ToListAsync(cancellationToken);
-        }
-        catch
-        {
-            return GetConceptosSemilla().Select(c => new CuentaConceptoDTO(
-                c.Id, c.Clave, c.Descripcion, c.CuotaBase, c.Categoria, c.AplicaBeca)).ToList();
-        }
-    }
-
-    public async Task<CuentaConceptoDTO> CrearCuentaConceptoAsync(CrearCuentaConceptoRequest req, CancellationToken cancellationToken)
-    {
-        var clave = req.Cuenta.Trim();
-        var existe = await dbContext.ConceptosCobro.AnyAsync(c => c.Clave == clave, cancellationToken);
-        if (existe)
-        {
-            throw new InvalidOperationException($"La cuenta o concepto '{clave}' ya se encuentra registrada.");
-        }
-
-        var concepto = new ConceptoCobro
-        {
-            Clave = clave,
-            Descripcion = req.Descripcion.Trim(),
-            CuotaBase = req.Costo,
-            Categoria = string.IsNullOrWhiteSpace(req.Categoria) ? "Inscripción" : req.Categoria.Trim(),
-            AplicaBeca = false,
-            IsActive = true
-        };
-
-        dbContext.ConceptosCobro.Add(concepto);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return new CuentaConceptoDTO(concepto.Id, concepto.Clave, concepto.Descripcion, concepto.CuotaBase, concepto.Categoria, concepto.AplicaBeca);
-    }
-
-    public async Task<CuentaConceptoDTO> ActualizarCuentaConceptoAsync(Guid id, ActualizarCuentaConceptoRequest req, CancellationToken cancellationToken)
-    {
-        var concepto = await dbContext.ConceptosCobro.FindAsync([id], cancellationToken)
-            ?? throw new KeyNotFoundException("Concepto o cuenta no encontrada.");
-
-        concepto.Descripcion = req.Descripcion.Trim();
-        concepto.CuotaBase = req.Costo;
-        if (!string.IsNullOrWhiteSpace(req.Categoria))
-        {
-            concepto.Categoria = req.Categoria.Trim();
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return new CuentaConceptoDTO(concepto.Id, concepto.Clave, concepto.Descripcion, concepto.CuotaBase, concepto.Categoria, concepto.AplicaBeca);
-    }
+    // Cuentas contables -> Desacoplado a TecNM.Api.Modules.Cuentas.CuentasService
 
     // =========================================================================
     // 5. ANÁLISIS DE REFERENCIAS BANCARIAS (ESTRUCTURA 5+5 Y DETECCIÓN)

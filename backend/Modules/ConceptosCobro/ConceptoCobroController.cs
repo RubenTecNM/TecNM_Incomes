@@ -172,4 +172,20 @@ public sealed class ConceptoCobroController(ConceptoCobroService conceptoService
             return NotFound(new { message = ex.Message });
         }
     }
+
+    // Compatibility alias for /api/caja/cuentas consolidated into ConceptosCobro
+    [HttpGet("/api/caja/cuentas")]
+    public async Task<IActionResult> GetCuentasAlias(CancellationToken cancellationToken)
+    {
+        var items = await conceptoService.GetAllActiveAsync(cancellationToken);
+        return Ok(items.Select(c => new
+        {
+            id = c.Id,
+            cuenta = c.Clave,
+            descripcion = c.Descripcion,
+            costo = c.CuotaBase,
+            categoria = c.Categoria,
+            aplicaBeca = c.AplicaBeca
+        }));
+    }
 }

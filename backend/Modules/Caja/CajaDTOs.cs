@@ -75,24 +75,7 @@ public sealed record CrearEmpleadoRequest(
     string Role,
     string Password);
 
-public sealed record CuentaConceptoDTO(
-    Guid Id,
-    string Cuenta,
-    string Descripcion,
-    decimal Costo,
-    string Categoria,
-    bool AplicaBeca);
-
-public sealed record CrearCuentaConceptoRequest(
-    string Cuenta,
-    string Descripcion,
-    decimal Costo,
-    string? Categoria = "Inscripción");
-
-public sealed record ActualizarCuentaConceptoRequest(
-    string Descripcion,
-    decimal Costo,
-    string? Categoria = null);
+// Cuentas contables -> Desacoplado a TecNM.Api.Modules.Cuentas
 
 public sealed record ConceptoDTO(
     Guid Id,

@@ -114,18 +114,37 @@ public sealed class ConceptoCobroService(
         return concept is null ? null : MapToDTO(concept);
     }
 
+    private static readonly string[] DefaultCategories =
+    [
+        "Inscripción",
+        "Reinscripción",
+        "Constancias",
+        "Cursos",
+        "Exámenes",
+        "Titulación",
+        "Servicios",
+        "Varios",
+        "Otros"
+    ];
+
     /// <summary>
-    /// Retrieves a distinct list of all categories currently registered in the catalog.
+    /// Retrieves a distinct list of all categories currently registered in the catalog merged with standard institutional categories.
     /// </summary>
     public async Task<IReadOnlyList<string>> GetCategoriesAsync(
         CancellationToken cancellationToken = default)
     {
-        return await dbContext.ConceptosCobro
+        var dbCategories = await dbContext.ConceptosCobro
             .AsNoTracking()
-            .Select(c => c.Categoria)
+            .Where(c => !string.IsNullOrWhiteSpace(c.Categoria))
+            .Select(c => c.Categoria.Trim())
             .Distinct()
-            .OrderBy(c => c)
             .ToListAsync(cancellationToken);
+
+        return dbCategories
+            .Concat(DefaultCategories)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c)
+            .ToList();
     }
 
     /// <summary>

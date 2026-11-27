@@ -12,7 +12,7 @@ public sealed class CajaController(CajaService cajaService) : ControllerBase
     // =========================================================================
 
     // =========================================================================
-    // 3. Empleados/Cajeros y Cuentas de Cobro (Catálogos y Distinción)
+    // 3. Empleados/Cajeros (Cuentas -> Decoupled to CuentasController)
     // =========================================================================
 
     [HttpGet("empleados")]
@@ -35,46 +35,6 @@ public sealed class CajaController(CajaService cajaService) : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
-        }
-    }
-
-    [HttpGet("cuentas")]
-    public async Task<ActionResult<List<CuentaConceptoDTO>>> ListarCuentas(CancellationToken cancellationToken)
-    {
-        var cuentas = await cajaService.ListarCuentasConceptosAsync(cancellationToken);
-        return Ok(cuentas);
-    }
-
-    [HttpPost("cuentas")]
-    public async Task<ActionResult<CuentaConceptoDTO>> CrearCuenta(
-        [FromBody] CrearCuentaConceptoRequest req,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var cuenta = await cajaService.CrearCuentaConceptoAsync(req, cancellationToken);
-            return Created($"/api/caja/cuentas/{cuenta.Id}", cuenta);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-    }
-
-    [HttpPut("cuentas/{id:guid}")]
-    public async Task<ActionResult<CuentaConceptoDTO>> ActualizarCuenta(
-        [FromRoute] Guid id,
-        [FromBody] ActualizarCuentaConceptoRequest req,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var cuenta = await cajaService.ActualizarCuentaConceptoAsync(id, req, cancellationToken);
-            return Ok(cuenta);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
         }
     }
 
